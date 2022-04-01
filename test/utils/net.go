@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// RequireServiceOnline dials port(s)to check if the service comes online until it reaches the maximum retry
-func RequireServiceOnline(t *testing.T, ports ...string) {
-	const dialTimeout = 2 * time.Second
+// WaitServiceOnline dials port(s) to check if the service comes online until it reaches the maximum retry
+func WaitServiceOnline(t *testing.T, ports ...string) {
 	const maxRetry = 60
+        const timeout = 3 * time.Second
 
 	for _, port := range ports {
 		serviceIsOnline := false
@@ -20,12 +20,13 @@ func RequireServiceOnline(t *testing.T, ports ...string) {
 
 		for i := 0; !serviceIsOnline && i < maxRetry; i++ {
 			t.Logf("Waiting for service. Dialing port %s. Retry %d/%d", port, i+1, maxRetry)
-			conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", port), dialTimeout)
+			conn, err := net.DialTimeout("tcp", net.JoinHostPort("127.0.0.1", port), timeout)
 			if conn != nil {
 				serviceIsOnline = true
 				t.Logf("Service online now. Port %s is listening", port)
 			}
 			returnErr = err
+
 			time.Sleep(1 * time.Second)
 		}
 
@@ -34,9 +35,10 @@ func RequireServiceOnline(t *testing.T, ports ...string) {
 	}
 }
 
-// RequirePortOpen checks if a port accepts connections
-func RequirePortOpen(t *testing.T, host, port string) {
-	conn, err := net.Dial("tcp", net.JoinHostPort(host, port))
+// RequirePortOpen checks if a local port accepts connections
+func RequirePortOpen(t *testing.T, port string) {
+        const timeout = 3 * time.Second
+	conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", port), timeout)
 	if err != nil {
 		conn.Close()
 		t.Fatalf("Port %s is not open: %s", port, err)
@@ -52,12 +54,7 @@ func RequirePortOpen(t *testing.T, host, port string) {
 	}
 }
 
-// RequirePortOpenLocalhost checks if a local port accepts connections
-func RequirePortOpenLocalhost(t *testing.T, port string) {
-	RequirePortOpen(t, "localhost", port)
-}
-
-// RequirePortAvailable checks if a port is available, i.e. not used by a server
+// RequirePortAvailable checks if a port is available locally, i.e. not open
 func RequirePortAvailable(t *testing.T, port string) {
 	stdout, _ := Exec(t, fmt.Sprintf("sudo lsof -nPi :%s || true", port))
 	if stdout != "" {
