@@ -11,30 +11,40 @@ const dialTimeout = 2 * time.Second
 
 // WaitServiceOnline waits for a service to come online by dialing its port(s)
 // up to a maximum number
-func WaitServiceOnline(t *testing.T, ports ...string) {
-	const maxRetry = 60
+func WaitServiceOnline(t *testing.T, timeout time.Duration, ports ...string) {
+	start := time.Now()
 
-PORTS:
+	portsMap := make(map[string]bool)
 	for _, port := range ports {
-		var returnErr error
+		portsMap[port] = false
+	}
+	closePorts := func() (pts []string) {
+		for port, open := range portsMap {
+			if !open {
+				pts = append(pts, port)
+			}
+		}
+		return pts
+	}
 
-		for i := 1; i <= maxRetry; i++ {
-			t.Logf("Waiting for service port %s. Retry %d/%d", port, i, maxRetry)
+	for time.Since(start) < timeout {
+
+		t.Logf("Waiting for service ports %s. Elapsed %v/%v", closePorts(), time.Since(start), timeout)
+
+		for _, port := range closePorts() {
 
 			conn, err := net.DialTimeout("tcp", ":"+port, dialTimeout)
 			if conn != nil {
 				t.Logf("Service port %s is open.", port)
-				continue PORTS
+				portsMap[port] = true
+				continue
 			}
-			returnErr = err
 
-			time.Sleep(1 * time.Second)
-		}
-
-		if returnErr != nil {
-			t.Fatalf("Time out: reached max %d retries. Error: %v", maxRetry, returnErr)
-		} else {
-			t.Fatalf("Time out: reached max %d retries.", maxRetry)
+			if err != nil {
+				t.Fatalf("Timed out waiting for service ports: %v. Error:\n%v", closePorts(), err)
+			} else if conn == nil {
+				t.Fatalf("Timed out waiting for service ports: %v", closePorts())
+			}
 		}
 	}
 }
