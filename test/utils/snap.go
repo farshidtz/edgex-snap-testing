@@ -142,3 +142,7 @@ func SnapRestart(t *testing.T, names ...string) {
 		), true)
 	}
 }
+
+func LocalSnap() bool {
+	return LocalSnapPath != ""
+}

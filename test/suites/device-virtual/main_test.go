@@ -27,8 +27,8 @@ func TestMain(m *testing.M) {
 
 	// install the device snap before edgexfoundry
 	// to catch build error sooner and stop
-	if utils.LocalSnap != "" {
-		utils.SnapInstallFromFile(nil, utils.LocalSnap)
+	if utils.LocalSnap() {
+		utils.SnapInstallFromFile(nil, utils.LocalSnapPath)
 
 		// for local build, the interface isn't auto-connected.
 		// connect manually

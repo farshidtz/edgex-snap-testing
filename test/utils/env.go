@@ -18,7 +18,7 @@ var (
 	// global defaults
 	PlatformChannel = "latest/edge"
 	ServiceChannel  = "latest/edge"
-	LocalSnap       = ""
+	LocalSnapPath   = ""
 	FullConfigTest  = false
 )
 
@@ -32,7 +32,7 @@ func init() {
 	}
 
 	if v := os.Getenv(localSnap); v != "" {
-		LocalSnap = v
+		LocalSnapPath = v
 	}
 
 	if v := os.Getenv(fullConfigTest); v != "" {
